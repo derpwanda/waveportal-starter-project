@@ -1,10 +1,15 @@
+import { ethers } from "ethers";
 import * as React from "react";
 import { useEffect, useState } from "react";
 import './App.css';
+import abi from './utils/WavePortal.json'
 
 export default function App() {
   // a state variable to store the user's public wallet
   const [currentAccount, setCurrentAccount] = useState("");
+
+  const contractAddress = "0xF51c4Bb3B584D1B356069aD3e42F392C44Dd2c9C";
+  const contractABI = abi.abi;
 
   const checkIfWalletIsConnected = async () => {
     try {
@@ -56,9 +61,24 @@ export default function App() {
     checkIfWalletIsConnected();
   }, [])
 
-  // const wave = () => {
+  const wave = async () => {
+    try {
+      const { ethereum } = window;
 
-  // }
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const signer = provider.getSigner();
+        const wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
+
+        let count = await wavePortalContract.getTotalWaves();
+        console.log("Retrieved total wave count...", count.toNumber());
+      } else {
+        console.log("Ethereum object doesn't exist!");
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
 
   return (
     <div className="mainContainer">
@@ -72,12 +92,12 @@ export default function App() {
           I am farza and I worked on self-driving cars so that's pretty cool right? Connect your Ethereum wallet and wave at me!
         </div>
 
-        <button className="waveButton" onClick={null}>
+        <button className="waveButton" onClick={wave}>
           Wave at Me
         </button>
         {/* if there is no currentAccount show button */}
-        {!currentAccount && 
-        <button className='waveButton' onClick={connectWallet}>Connect Wallet</button>
+        {!currentAccount &&
+          <button className='waveButton' onClick={connectWallet}>Connect Wallet</button>
         }
       </div>
     </div>
