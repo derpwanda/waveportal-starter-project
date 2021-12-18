@@ -8,7 +8,8 @@ export default function App() {
   // a state variable to store the user's public wallet
   const [currentAccount, setCurrentAccount] = useState("");
 
-  const contractAddress = "0xF51c4Bb3B584D1B356069aD3e42F392C44Dd2c9C";
+  const [allWaves, setAllWaves] = useState([])
+  const contractAddress = "0xe41e3aa08257601581164dAb008Fcec0A8F7A537";
   const contractABI = abi.abi;
 
   const checkIfWalletIsConnected = async () => {
@@ -30,6 +31,7 @@ export default function App() {
         const account = accounts[0];
         console.log("Found an authorized account:", account);
         setCurrentAccount(account)
+        getAllWaves()
       } else {
         console.log("No authorized account found")
       }
@@ -74,7 +76,7 @@ export default function App() {
         console.log("Retrieved total wave count...", count.toNumber());
 
         // execute the actual wave from your smart contract
-        const waveTxn = await wavePortalContract.wave();
+        const waveTxn = await wavePortalContract.wave("Figure out how to let users leave a message!");
         console.log("Mining...", waveTxn.hash);
 
         await waveTxn.wait();
@@ -90,6 +92,45 @@ export default function App() {
     }
   }
 
+  const getAllWaves = async () => {
+    try {
+      const { ethereum } = window;
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const signer = provider.getSigner();
+        const wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
+
+        /*
+         * Call the getAllWaves method from your Smart Contract
+         */
+        const waves = await wavePortalContract.getAllWaves();
+
+
+        /*
+         * We only need address, timestamp, and message in our UI so let's
+         * pick those out
+         */
+        let wavesCleaned = [];
+        waves.forEach(wave => {
+          wavesCleaned.push({
+            address: wave.waver,
+            timestamp: new Date(wave.timestamp * 1000),
+            message: wave.message
+          });
+        });
+
+        /*
+         * Store our data in React State
+         */
+        setAllWaves(wavesCleaned);
+      } else {
+        console.log("Ethereum object doesn't exist!")
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   return (
     <div className="mainContainer">
 
@@ -99,16 +140,25 @@ export default function App() {
         </div>
 
         <div className="bio">
-          I am farza and I worked on self-driving cars so that's pretty cool right? Connect your Ethereum wallet and wave at me!
+          I am wanda and I'm new to _buildspace! Connect your Ethereum wallet and wave at me!
         </div>
 
         <button className="waveButton" onClick={wave}>
           Wave at Me
         </button>
         {/* if there is no currentAccount show button */}
-        {!currentAccount &&
+        {!currentAccount && (
           <button className='waveButton' onClick={connectWallet}>Connect Wallet</button>
-        }
+        )}
+
+        {allWaves.map((wave, index) => {
+          return (
+            <div key={index} style={{ backgroundColor: "OldLace", marginTop: "16px", padding: "8px" }}>
+              <div>Address: {wave.address}</div>
+              <div>Time: {wave.timestamp.toString()}</div>
+              <div>Message: {wave.message}</div>
+            </div>)
+        })}
       </div>
     </div>
   );
